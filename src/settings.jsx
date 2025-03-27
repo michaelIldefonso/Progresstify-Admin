@@ -2,7 +2,6 @@ import React from "react";
 
 function Settings() {
   const handleFeatureToggle = (event) => {
-    // Implement feature toggle logic here
     console.log(`Feature ${event.target.name} is now ${event.target.checked ? 'enabled' : 'disabled'}`);
   };
 
@@ -13,14 +12,14 @@ function Settings() {
         <label className="block text-sm font-medium text-gray-700">Site Name</label>
         <input
           type="text"
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         />
       </div>
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700">Logo URL</label>
         <input
           type="text"
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         />
       </div>
       <div className="mb-4 flex items-center">
@@ -29,7 +28,7 @@ function Settings() {
           id="featureX"
           name="featureX"
           onChange={handleFeatureToggle}
-          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+          className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
         />
         <label htmlFor="featureX" className="ml-2 block text-sm text-gray-900">
           Enable Feature X
@@ -41,13 +40,13 @@ function Settings() {
           id="featureY"
           name="featureY"
           onChange={handleFeatureToggle}
-          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+          className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
         />
         <label htmlFor="featureY" className="ml-2 block text-sm text-gray-900">
           Enable Feature Y
         </label>
       </div>
-      <button className="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+      <button className="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
         Save Settings
       </button>
     </div>

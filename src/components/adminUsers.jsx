@@ -29,8 +29,18 @@ const AdminUsers = () => {
       {users.map(user => (
         <div key={user.id}>
           <span>{user.name} ({user.email}) - {user.role}</span>
-          <button onClick={() => changeRole(user.id, "admin")}>Make Admin</button>
-          <button onClick={() => changeRole(user.id, "user")}>Make User</button>
+          <button
+            className="ml-2 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => changeRole(user.id, "admin")}
+          >
+            Make Admin
+          </button>
+          <button
+            className="ml-2 px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
+            onClick={() => changeRole(user.id, "user")}
+          >
+            Make User
+          </button>
         </div>
       ))}
     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import Navbar from './components/Navbar'; // Ensure correct import
+import Navbar from './components/navbar'; // Ensure correct import
 
 function DataManagement() {
     return (

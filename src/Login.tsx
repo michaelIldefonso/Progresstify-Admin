@@ -2,8 +2,8 @@ import React from 'react';
 
 function Login() {
     const handleOAuthLogin = () => {
-        // Replace with your OAuth2 provider's login URL
-        const oauth2LoginUrl = 'https://your-oauth2-provider.com/oauth2/authorize';
+        // Use the environment variable for the base URL and append the path
+        const oauth2LoginUrl = `${import.meta.env.VITE_API_BASE_URL}/auth/admin/google`;
         window.location.href = oauth2LoginUrl;
     };
 

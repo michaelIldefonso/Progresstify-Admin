@@ -1,8 +1,36 @@
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { SectionCards } from "@/components/section-cards"
 import  Navbar  from "@/components/navbar"
 
 export default function Page() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("Token");
+
+    if (!storedToken) {
+      navigate("/");
+      return;
+    }
+    axios
+      .get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${storedToken}` },
+      })
+      .then((response) => {
+        console.log("API Response:", response.data);
+        setUser(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching user data:", error);
+        navigate("/");
+      });
+  }, [navigate]);
+
   return (
     <div className="flex">  
         <Navbar />

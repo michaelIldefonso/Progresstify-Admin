@@ -10,8 +10,7 @@ function Navbar() {
                     <ul className="flex flex-col space-y-2">
                         <li><Link to="/home" className="hover:underline">Home</Link></li>
                         <li><Link to="/dashboard" className="hover:underline">Dashboard</Link></li>
-                        <li><Link to="/data-management" className="hover:underline">Data Management</Link></li>
-                        <li><Link to="/users" className="hover:underline">Users</Link></li>
+                        <li><Link to="/userManagement" className="hover:underline">User Management</Link></li>
                         <li><Link to="/button-control" className="hover:underline">Button Control</Link></li>
                         <li><a href="#logout" className="hover:underline">Logout</a></li>
                     </ul>

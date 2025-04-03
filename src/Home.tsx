@@ -1,27 +1,51 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import Navbar from './components/navbar'; // Import Navbar
+import axios from 'axios'; // Import axios for API calls
 
 function Home() {
     const [user, setUser] = useState({ name: '', role: '', role_id: null });
+    const navigate = useNavigate(); // Initialize navigate for redirection
 
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
+        // Check if token is present in the URL and store it in localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get("token"); // Get token from URL
+
         if (token) {
-            // Simulate decoding the token or fetching user data from an API
-            const userData = {
-                name: 'John Doe', // Replace with actual decoded data
-                role_id: 1, // Replace with actual decoded data
-            };
-            setUser({
-                name: userData.name,
-                role: userData.role_id === 1 ? 'Admin' : 'User',
-                role_id: userData.role_id,
-            });
-        } else {
-            // Redirect to login if no token is found
-            window.location.href = '/login';
+            localStorage.setItem("Token", token); // Store token in localStorage
+            window.history.replaceState({}, document.title, "/home"); // Remove token from URL
         }
-    }, []);
+
+        const storedToken = localStorage.getItem("Token"); // Get token from localStorage
+
+        if (!storedToken) {
+            // If no token is found, redirect to the login page
+            console.error("No token found, redirecting...");
+            navigate("/");
+            return;
+        }
+
+        // Fetch user data from the API
+        axios
+            .get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
+                headers: { Authorization: `Bearer ${storedToken}` },
+            })
+            .then((response) => {
+                console.log("API Response:", response.data); // Debug log
+                const userData = response.data;
+                setUser({
+                    name: userData.userName,
+                    role: userData.userRole === 1 ? 'Admin' : 'User',
+                    role_id: userData.userRole,
+                });
+            })
+            .catch((error) => {
+                console.error("Error fetching user data:", error);
+                localStorage.removeItem("authToken"); // Clear invalid token
+                navigate("/"); // Redirect to the login page
+            });
+    }, [navigate]);
 
     return (
         <div className="flex min-h-screen bg-gray-100">
@@ -31,9 +55,6 @@ function Home() {
                     <h1 className="text-2xl font-bold mb-4">Welcome, {user.name}</h1>
                     <p className="text-lg">
                         <span className="font-semibold">Role:</span> {user.role}
-                    </p>
-                    <p className="text-lg">
-                        <span className="font-semibold">Role ID:</span> {user.role_id}
                     </p>
                 </div>
             </div>

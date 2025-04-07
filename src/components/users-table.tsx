@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import { ChevronUpIcon, ChevronDownIcon } from "lucide-react"; // Add this import
 
 // Define schema for user data
 export const userSchema = z.object({
@@ -18,7 +19,23 @@ type User = z.infer<typeof userSchema>;
 
 export function DataTable() {
   const [data, setData] = React.useState<User[]>([]);
+  const [sortByRole, setSortByRole] = React.useState<"asc" | "desc" | null>(null); // State for sorting
   const navigate = useNavigate();
+
+  const roleNameToIdMap: Record<string, number> = {
+    admin: 1,
+    moderator: 2,
+    user: 3,
+  };
+
+  const sortedData = React.useMemo(() => {
+    if (!sortByRole) return data;
+    return [...data].sort((a, b) => {
+      const roleA = roleNameToIdMap[a.role.toLowerCase()] ?? Infinity;
+      const roleB = roleNameToIdMap[b.role.toLowerCase()] ?? Infinity;
+      return sortByRole === "asc" ? roleA - roleB : roleB - roleA;
+    });
+  }, [data, sortByRole]);
 
   React.useEffect(() => {
     const storedToken = localStorage.getItem("Token");
@@ -37,7 +54,7 @@ export function DataTable() {
         console.log("API Response:", response.data); // Debugging log
         const usersWithRoles = response.data.map((user: any) => ({
           ...user,
-          role: user.role_name || "Unknown", // Map role_name to role
+          role: user.role_name || "unknown", // Map role_name to role
         }));
         setData(usersWithRoles);
       })
@@ -47,16 +64,9 @@ export function DataTable() {
       });
   }, [navigate]);
 
-  const roleNameToIdMap: Record<string, string> = {
-    admin: "1",
-    moderator: "2",
-    user: "3",
-
-  };
-
   const updateUserRole = (id: string, newRole: User["role"]) => {
     const storedToken = localStorage.getItem("Token");
-    const role_id = roleNameToIdMap[newRole]; // Map role name to role_id
+    const role_id = roleNameToIdMap[newRole.toLowerCase()]; // Map role name to role_id
 
     axios
       .put(
@@ -81,6 +91,26 @@ export function DataTable() {
       });
   };
 
+  const deleteUser = (id: string) => {
+    const storedToken = localStorage.getItem("Token");
+
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      axios
+        .delete(`${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}`, {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${storedToken}` },
+        })
+        .then(() => {
+          setData((prevData) => prevData.filter((user) => user.id !== id));
+          toast.success("User deleted successfully!");
+        })
+        .catch((error) => {
+          console.error("Error deleting user:", error);
+          toast.error("Failed to delete user.");
+        });
+    }
+  };
+
   return (
     <div className="overflow-y-auto max-h-[calc(100vh-100px)] rounded-lg border">
       <Table>
@@ -88,13 +118,32 @@ export function DataTable() {
           <TableRow>
             <TableHead>ID</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead className="text-center">Current Role</TableHead>
+            <TableHead
+              className="text-center cursor-pointer"
+              onClick={() =>
+                setSortByRole((prev) =>
+                  prev === "asc" ? "desc" : prev === "desc" ? null : "asc"
+                )
+              }
+            >
+              <div className="flex items-center justify-center gap-1">
+                Current Role
+                {sortByRole === "asc" && <ChevronUpIcon className="h-3 w-3" />}
+                {sortByRole === "desc" && <ChevronDownIcon className="h-3 w-3" />}
+                {sortByRole === null && (
+                  <div className="flex flex-col items-center">
+                    <ChevronUpIcon className="h-3 w-3" />
+                    <ChevronDownIcon className="h-3 w-3" />
+                  </div>
+                )}
+              </div>
+            </TableHead>
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.length ? (
-            data.map((user) => (
+          {sortedData.length ? (
+            sortedData.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>{user.id}</TableCell>
                 <TableCell>{user.email}</TableCell>
@@ -102,7 +151,7 @@ export function DataTable() {
                   <Badge variant="outline">{user.role}</Badge> {/* Display the role */}
                 </TableCell>
                 <TableCell className="text-center">
-                  <div className="flex justify-center">
+                  <div className="flex justify-center gap-2">
                     <Select
                       value={user.role}
                       onValueChange={(value) => updateUserRole(user.id, value as User["role"])}
@@ -116,6 +165,12 @@ export function DataTable() {
                         <SelectItem value="moderator">moderator</SelectItem>
                       </SelectContent>
                     </Select>
+                    <button
+                      onClick={() => deleteUser(user.id)}
+                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>

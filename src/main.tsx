@@ -3,8 +3,14 @@ import { createRoot } from 'react-dom/client';
 import './index.css'; // Tailwind CSS styles
 import AppRoutes from './routes'; // Import AppRoutes
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <AppRoutes /> {/* Ensure AppRoutes is rendered */}
-  </StrictMode>
-);
+const rootElement = document.getElementById('root');
+
+if (rootElement) {
+  createRoot(rootElement).render(
+    <StrictMode>
+      <AppRoutes /> {/* Ensure AppRoutes is rendered */}
+    </StrictMode>
+  );
+} else {
+  console.error("Root element not found!");
+}

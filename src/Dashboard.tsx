@@ -4,6 +4,8 @@ import axios from "axios";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { SectionCards } from "@/components/section-cards"
 import  Navbar  from "@/components/navbar"
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 export default function Page() {
   const navigate = useNavigate();
@@ -30,6 +32,23 @@ export default function Page() {
         navigate("/");
       });
   }, [navigate]);
+
+  if (!user) {
+    // Render skeleton placeholders while loading
+    return (
+      <div className="flex">
+        <Navbar />
+        <div className="flex flex-1 flex-col">
+          <div className="p-4">
+            <Skeleton className="h-8 w-1/4 mb-4" />
+            <Skeleton className="h-48 w-full mb-4" />
+            <Skeleton className="h-48 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
 
   return (
     <div className="flex">  

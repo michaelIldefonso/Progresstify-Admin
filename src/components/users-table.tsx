@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { ChevronUpIcon, ChevronDownIcon } from "lucide-react"; // Add this import
+import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 
 // Define schema for user data
 export const userSchema = z.object({
@@ -19,6 +20,7 @@ type User = z.infer<typeof userSchema>;
 
 export function DataTable() {
   const [data, setData] = React.useState<User[]>([]);
+  const [loading, setLoading] = React.useState(true); // Add loading state
   const [sortByRole, setSortByRole] = React.useState<"asc" | "desc" | null>(null); // State for sorting
   const navigate = useNavigate();
 
@@ -38,30 +40,38 @@ export function DataTable() {
   }, [data, sortByRole]);
 
   React.useEffect(() => {
-    const storedToken = localStorage.getItem("Token");
+    const fetchData = async () => {
+      const storedToken = localStorage.getItem("Token");
 
-    if (!storedToken) {
-      navigate("/");
-      return;
-    }
+      if (!storedToken) {
+        navigate("/");
+        setLoading(false); // Ensure loading is set to false if no token
+        return;
+      }
 
-    axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/api/admin/users`, {
-        withCredentials: true,
-        headers: { Authorization: `Bearer ${storedToken}` },
-      })
-      .then((response) => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/admin/users`,
+          {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${storedToken}` },
+          }
+        );
         console.log("API Response:", response.data); // Debugging log
         const usersWithRoles = response.data.map((user: any) => ({
           ...user,
           role: user.role_name || "unknown", // Map role_name to role
         }));
         setData(usersWithRoles);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching users:", error);
         navigate("/");
-      });
+      } finally {
+        setLoading(false); // Ensure loading is set to false in all cases
+      }
+    };
+
+    fetchData();
   }, [navigate]);
 
   const updateUserRole = (id: string, newRole: User["role"]) => {
@@ -110,6 +120,14 @@ export function DataTable() {
         });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="h-[500px] w-full">
+        <Skeleton className="h-full w-full" /> {/* Show Skeleton while loading */}
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-y-auto max-h-[calc(100vh-100px)] rounded-lg border">

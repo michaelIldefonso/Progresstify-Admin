@@ -14,6 +14,8 @@ export const userSchema = z.object({
   id: z.string(),
   email: z.string(),
   role: z.enum(["Admin", "User", "Moderator"]),
+  oauth_id: z.string().nullable(), // Add oauth_id
+  oauth_provider: z.string().nullable(), // Add oauth_provider
 });
 
 type User = z.infer<typeof userSchema>;
@@ -59,8 +61,11 @@ export function DataTable() {
         );
         console.log("API Response:", response.data); // Debugging log
         const usersWithRoles = response.data.map((user: any) => ({
-          ...user,
-          role: user.role_name || "unknown", // Map role_name to role
+          id: user.oauth_id || user.id, // Use oauth_id if available
+          email: user.email,
+          role: user.role_name || "unknown",
+          oauth_id: user.oauth_id, // Include oauth_id
+          oauth_provider: user.oauth_provider, // Include oauth_provider
         }));
         setData(usersWithRoles);
       } catch (error) {
@@ -134,8 +139,9 @@ export function DataTable() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Email</TableHead>
+            <TableHead className="text-center">ID</TableHead>
+            <TableHead className="text-center">Provider</TableHead> {/* Center Provider column */}
+            <TableHead className="text-center">Email</TableHead>
             <TableHead
               className="text-center cursor-pointer"
               onClick={() =>
@@ -164,9 +170,10 @@ export function DataTable() {
             sortedData.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>{user.id}</TableCell>
+                <TableCell className="text-center">{user.oauth_provider || "N/A"}</TableCell> {/* Move provider display here */}
                 <TableCell>{user.email}</TableCell>
                 <TableCell className="text-center">
-                  <Badge variant="outline">{user.role}</Badge> {/* Display the role */}
+                  <Badge variant="outline">{user.role}</Badge>
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center gap-2">
@@ -178,9 +185,9 @@ export function DataTable() {
                         <SelectValue placeholder="Change role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">admin</SelectItem>
-                        <SelectItem value="user">user</SelectItem>
-                        <SelectItem value="moderator">moderator</SelectItem>
+                        <SelectItem value="admin" className="text-center">admin</SelectItem>
+                        <SelectItem value="user" className="text-center">user</SelectItem>
+                        <SelectItem value="moderator" className="text-center">moderator</SelectItem>
                       </SelectContent>
                     </Select>
                     <button
@@ -195,7 +202,7 @@ export function DataTable() {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={4} className="text-center">
+              <TableCell colSpan={5} className="text-center"> {/* Adjust colspan */}
                 No users found.
               </TableCell>
             </TableRow>

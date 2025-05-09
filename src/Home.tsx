@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
-import Navbar from './components/navbar'; // Import Navbar
-import axios from 'axios'; // Import axios for API calls
+import { useNavigate } from 'react-router-dom';
+import Navbar from './components/navbar';
+import axios from 'axios';
 
 function Home() {
     const [user, setUser] = useState({ name: '', role: '', role_id: null });
-    const navigate = useNavigate(); // Initialize navigate for redirection
+    const navigate = useNavigate();
 
     useEffect(() => {
         // Check if token is present in the URL and store it in localStorage
@@ -48,10 +48,10 @@ function Home() {
     }, [navigate]);
 
     return (
-        <div className="flex min-h-screen bg-gray-100">
-            <Navbar /> {/* Use Navbar component */}
+        <div className="flex min-h-screen bg-gray-900 text-white">
+            <Navbar />
             <div className="flex-1 p-6">
-                <div className="container mx-auto mt-8 bg-white p-6 rounded-lg shadow-md">
+                <div className="container mx-auto mt-8 bg-gray-800 p-6 rounded-lg shadow-md">
                     <h1 className="text-2xl font-bold mb-4">Welcome, {user.name}</h1>
                     <p className="text-lg">
                         <span className="font-semibold">Role:</span> {user.role}

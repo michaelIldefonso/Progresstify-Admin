@@ -173,7 +173,7 @@ export function DataTable() {
                 <TableCell className="text-center">{user.oauth_provider || "N/A"}</TableCell> {/* Move provider display here */}
                 <TableCell>{user.email}</TableCell>
                 <TableCell className="text-center">
-                  <Badge variant="outline">{user.role}</Badge>
+                  {user.role}
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center gap-2">

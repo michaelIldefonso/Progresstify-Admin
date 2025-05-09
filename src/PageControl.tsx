@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Navbar from './components/navbar'; // Ensure correct import
 
-function ButtonControl() {
+function PageControl() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
@@ -30,11 +30,11 @@ function ButtonControl() {
   }, [navigate]);
 
   return (
-    <div className="flex">
+    <div className="flex min-h-screen bg-gray-900 text-white">
       <Navbar /> {/* Ensure Navbar is rendered */}
       <div className="flex-1 p-4">
-        <div className="container mx-auto mt-8">
-          <h1>Button Control</h1>
+        <div className="container mx-auto mt-8 bg-gray-800 p-6 rounded-lg shadow-md">
+          <h1 className="text-xl font-bold mb-4">Button Control</h1>
           <p>Control buttons and actions here.</p>
         </div>
       </div>
@@ -42,4 +42,4 @@ function ButtonControl() {
   );
 }
 
-export default ButtonControl;
+export default PageControl;

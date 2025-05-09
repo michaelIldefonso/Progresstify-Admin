@@ -129,7 +129,7 @@ const chartData = [
 const chartConfig = {
   visitors: {
     label: "Visitors",
-    color: "var(--primary)",
+    color: "#4F46E5", // Adjusted for dark theme
   },
 } satisfies ChartConfig
 
@@ -156,7 +156,7 @@ export function ChartAreaInteractive() {
   })
 
   return (
-    <Card className="@container/card">
+    <Card className="bg-gray-800 text-white shadow-md">
       <CardHeader>
         <CardTitle>Total Visitors</CardTitle>
         <CardDescription>
@@ -171,14 +171,14 @@ export function ChartAreaInteractive() {
             value={timeRange}
             onValueChange={setTimeRange}
             variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
+            className="hidden @[767px]/card:flex"
           >
             <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
             <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
           </ToggleGroup>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger
-              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+              className="flex w-40 @[767px]/card:hidden"
               size="sm"
               aria-label="Select a value"
             >
@@ -205,23 +205,24 @@ export function ChartAreaInteractive() {
               <linearGradient id="fillVisitors" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="var(--primary)"
+                  stopColor="#4F46E5"
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="95%"
-                  stopColor="var(--primary)"
+                  stopColor="#4F46E5"
                   stopOpacity={0.1}
                 />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} />
+            <CartesianGrid vertical={false} stroke="#374151" />
             <XAxis
               dataKey="date"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
               minTickGap={32}
+              tick={{ fill: "#D1D5DB" }}
               tickFormatter={(value) => {
                 const date = new Date(value)
                 return date.toLocaleDateString("en-US", {
@@ -249,7 +250,7 @@ export function ChartAreaInteractive() {
               dataKey={(data) => data.desktop + data.mobile}
               type="natural"
               fill="url(#fillVisitors)"
-              stroke="var(--primary)"
+              stroke="#4F46E5"
             />
           </AreaChart>
         </ChartContainer>

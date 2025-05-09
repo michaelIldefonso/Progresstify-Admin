@@ -2,31 +2,43 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Navbar from './components/navbar'; // Ensure correct import
+import { refreshToken } from "@/utils/auth"; // Import shared utility
 
 function PageControl() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("Token");
+    const fetchData = async () => {
+      let storedToken = localStorage.getItem("Token");
 
-    if (!storedToken) {
-      navigate("/");
-      return;
-    }
-    axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
-        withCredentials: true,
-        headers: { Authorization: `Bearer ${storedToken}` },
-      })
-      .then((response) => {
-        console.log("API Response:", response.data);
-        setUser(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching user data:", error);
+      if (!storedToken) {
         navigate("/");
-      });
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${storedToken}` },
+        });
+        setUser(response.data);
+      } catch (error) {
+        if (error.response?.status === 401) {
+          storedToken = await refreshToken();
+          const retryResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${storedToken}` },
+          });
+          setUser(retryResponse.data);
+        } else {
+          console.error("Error fetching user data:", error);
+          navigate("/");
+        }
+      }
+    };
+
+    fetchData();
   }, [navigate]);
 
   return (

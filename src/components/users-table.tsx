@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { ChevronUpIcon, ChevronDownIcon } from "lucide-react"; // Add this import
 import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
+import { refreshToken } from "@/utils/auth"; // Import shared utility
 
 // Define schema for user data
 export const userSchema = z.object({
@@ -43,11 +44,11 @@ export function DataTable() {
 
   React.useEffect(() => {
     const fetchData = async () => {
-      const storedToken = localStorage.getItem("Token");
+      let storedToken = localStorage.getItem("Token");
 
       if (!storedToken) {
         navigate("/");
-        setLoading(false); // Ensure loading is set to false if no token
+        setLoading(false);
         return;
       }
 
@@ -59,70 +60,118 @@ export function DataTable() {
             headers: { Authorization: `Bearer ${storedToken}` },
           }
         );
-        console.log("API Response:", response.data); // Debugging log
         const usersWithRoles = response.data.map((user: any) => ({
-          id: user.oauth_id || user.id, // Use oauth_id if available
+          id: user.oauth_id || user.id,
           email: user.email,
           role: user.role_name || "unknown",
-          oauth_id: user.oauth_id, // Include oauth_id
-          oauth_provider: user.oauth_provider, // Include oauth_provider
+          oauth_id: user.oauth_id,
+          oauth_provider: user.oauth_provider,
         }));
         setData(usersWithRoles);
       } catch (error) {
-        console.error("Error fetching users:", error);
-        navigate("/");
+        if (error.response?.status === 401) {
+          storedToken = await refreshToken(navigate);
+          const retryResponse = await axios.get(
+            `${import.meta.env.VITE_API_BASE_URL}/api/admin/users`,
+            {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${storedToken}` },
+            }
+          );
+          const usersWithRoles = retryResponse.data.map((user: any) => ({
+            id: user.oauth_id || user.id,
+            email: user.email,
+            role: user.role_name || "unknown",
+            oauth_id: user.oauth_id,
+            oauth_provider: user.oauth_provider,
+          }));
+          setData(usersWithRoles);
+        } else {
+          console.error("Error fetching users:", error);
+          navigate("/");
+        }
       } finally {
-        setLoading(false); // Ensure loading is set to false in all cases
+        setLoading(false);
       }
     };
 
     fetchData();
   }, [navigate]);
 
-  const updateUserRole = (id: string, newRole: User["role"]) => {
-    const storedToken = localStorage.getItem("Token");
-    const role_id = roleNameToIdMap[newRole.toLowerCase()]; // Map role name to role_id
+  const updateUserRole = async (id: string, newRole: User["role"]) => {
+    let storedToken = localStorage.getItem("Token");
+    const role_id = roleNameToIdMap[newRole.toLowerCase()];
 
-    axios
-      .put(
+    try {
+      await axios.put(
         `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}/role`,
-        { role_id }, // Send role_id instead of role name
+        { role_id },
         {
           withCredentials: true,
           headers: { Authorization: `Bearer ${storedToken}` },
         }
-      )
-      .then(() => {
+      );
+      setData((prevData) =>
+        prevData.map((user) =>
+          user.id === id ? { ...user, role: newRole } : user
+        )
+      );
+      toast.success("User role updated!");
+    } catch (error) {
+      if (error.response?.status === 401) {
+        storedToken = await refreshToken(navigate);
+        await axios.put(
+          `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}/role`,
+          { role_id },
+          {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${storedToken}` },
+          }
+        );
         setData((prevData) =>
           prevData.map((user) =>
             user.id === id ? { ...user, role: newRole } : user
           )
         );
         toast.success("User role updated!");
-      })
-      .catch((error) => {
+      } else {
         console.error("Error updating user role:", error);
         toast.error("Failed to update user role.");
-      });
+      }
+    }
   };
 
-  const deleteUser = (id: string) => {
-    const storedToken = localStorage.getItem("Token");
+  const deleteUser = async (id: string) => {
+    let storedToken = localStorage.getItem("Token");
 
     if (window.confirm("Are you sure you want to delete this user?")) {
-      axios
-        .delete(`${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}`, {
-          withCredentials: true,
-          headers: { Authorization: `Bearer ${storedToken}` },
-        })
-        .then(() => {
+      try {
+        await axios.delete(
+          `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}`,
+          {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${storedToken}` },
+          }
+        );
+        setData((prevData) => prevData.filter((user) => user.id !== id));
+        toast.success("User deleted successfully!");
+      } catch (error) {
+        if (error.response?.status === 401) {
+          storedToken = await refreshToken(navigate);
+          await axios.delete(
+            `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}`,
+            {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${storedToken}` },
+            }
+          );
           setData((prevData) => prevData.filter((user) => user.id !== id));
           toast.success("User deleted successfully!");
-        })
-        .catch((error) => {
+        } else {
           console.error("Error deleting user:", error);
           toast.error("Failed to delete user.");
-        });
+        }
+      }
     }
   };
 

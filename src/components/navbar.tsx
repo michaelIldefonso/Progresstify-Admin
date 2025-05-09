@@ -6,6 +6,7 @@ function Navbar() {
 
     const handleLogout = () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("RefreshToken"); // Clear refresh token
         navigate("/"); // Navigate to login
     };
 

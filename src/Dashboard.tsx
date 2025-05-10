@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { apiClient } from "@/utils/auth"; // Use centralized Axios instance
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { SectionCards } from "@/components/section-cards";
 import Navbar from "@/components/navbar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { refreshToken } from "@/utils/auth"; // Import shared utility
 
 export default function Page() {
   const navigate = useNavigate();
@@ -13,27 +12,25 @@ export default function Page() {
 
   useEffect(() => {
     const fetchData = async () => {
-      let storedToken = localStorage.getItem("Token");
-
-      if (!storedToken) {
-        navigate("/");
-        return;
-      }
-
+      const client = apiClient(navigate); // Initialize Axios instance with navigate
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
-          withCredentials: true,
-          headers: { Authorization: `Bearer ${storedToken}` },
-        });
+        const response = await client.get("/api/data");
         setUser(response.data);
-      } catch (error) {
+      } catch (err) {
+        const error = err as any; // Typecast error to any for safe access
         if (error.response?.status === 401) {
-          storedToken = await refreshToken();
-          const retryResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${storedToken}` },
-          });
-          setUser(retryResponse.data);
+          try {
+            const refreshResponse = await client.post("/api/refresh-token");
+            if (refreshResponse.status === 200) {
+              const retryResponse = await client.get("/api/data");
+              setUser(retryResponse.data);
+            } else {
+              navigate("/");
+            }
+          } catch (refreshError) {
+            console.error("Error refreshing token:", refreshError);
+            navigate("/");
+          }
         } else {
           console.error("Error fetching user data:", error);
           navigate("/");

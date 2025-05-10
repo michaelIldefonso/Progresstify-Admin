@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom"; // Add this import
-import axios from "axios";
+import { apiClient } from "@/utils/auth"; // Use centralized Axios instance
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { ChevronUpIcon, ChevronDownIcon } from "lucide-react"; // Add this import
 import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
-import { refreshToken } from "@/utils/auth"; // Import shared utility
 
 // Define schema for user data
 export const userSchema = z.object({
@@ -44,22 +43,9 @@ export function DataTable() {
 
   React.useEffect(() => {
     const fetchData = async () => {
-      let storedToken = localStorage.getItem("Token");
-
-      if (!storedToken) {
-        navigate("/");
-        setLoading(false);
-        return;
-      }
-
+      const client = apiClient(navigate); // Initialize Axios instance with navigate
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/admin/users`,
-          {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${storedToken}` },
-          }
-        );
+        const response = await client.get("/api/admin/users");
         const usersWithRoles = response.data.map((user: any) => ({
           id: user.oauth_id || user.id,
           email: user.email,
@@ -68,24 +54,23 @@ export function DataTable() {
           oauth_provider: user.oauth_provider,
         }));
         setData(usersWithRoles);
-      } catch (error) {
+      } catch (error: any) {
         if (error.response?.status === 401) {
-          storedToken = await refreshToken(navigate);
-          const retryResponse = await axios.get(
-            `${import.meta.env.VITE_API_BASE_URL}/api/admin/users`,
-            {
-              withCredentials: true,
-              headers: { Authorization: `Bearer ${storedToken}` },
-            }
-          );
-          const usersWithRoles = retryResponse.data.map((user: any) => ({
-            id: user.oauth_id || user.id,
-            email: user.email,
-            role: user.role_name || "unknown",
-            oauth_id: user.oauth_id,
-            oauth_provider: user.oauth_provider,
-          }));
-          setData(usersWithRoles);
+          try {
+            await client.post("/api/refresh-token");
+            const retryResponse = await client.get("/api/admin/users");
+            const usersWithRoles = retryResponse.data.map((user: any) => ({
+              id: user.oauth_id || user.id,
+              email: user.email,
+              role: user.role_name || "unknown",
+              oauth_id: user.oauth_id,
+              oauth_provider: user.oauth_provider,
+            }));
+            setData(usersWithRoles);
+          } catch (refreshError) {
+            console.error("Error refreshing token:", refreshError);
+            navigate("/");
+          }
         } else {
           console.error("Error fetching users:", error);
           navigate("/");
@@ -99,18 +84,11 @@ export function DataTable() {
   }, [navigate]);
 
   const updateUserRole = async (id: string, newRole: User["role"]) => {
-    let storedToken = localStorage.getItem("Token");
+    const client = apiClient(navigate); // Initialize Axios instance with navigate
     const role_id = roleNameToIdMap[newRole.toLowerCase()];
 
     try {
-      await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}/role`,
-        { role_id },
-        {
-          withCredentials: true,
-          headers: { Authorization: `Bearer ${storedToken}` },
-        }
-      );
+      await client.put(`/api/admin/users/${id}/role`, { role_id });
       setData((prevData) =>
         prevData.map((user) =>
           user.id === id ? { ...user, role: newRole } : user
@@ -118,59 +96,22 @@ export function DataTable() {
       );
       toast.success("User role updated!");
     } catch (error) {
-      if (error.response?.status === 401) {
-        storedToken = await refreshToken(navigate);
-        await axios.put(
-          `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}/role`,
-          { role_id },
-          {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${storedToken}` },
-          }
-        );
-        setData((prevData) =>
-          prevData.map((user) =>
-            user.id === id ? { ...user, role: newRole } : user
-          )
-        );
-        toast.success("User role updated!");
-      } else {
-        console.error("Error updating user role:", error);
-        toast.error("Failed to update user role.");
-      }
+      console.error("Error updating user role:", error);
+      toast.error("Failed to update user role.");
     }
   };
 
   const deleteUser = async (id: string) => {
-    let storedToken = localStorage.getItem("Token");
+    const client = apiClient(navigate); // Initialize Axios instance with navigate
 
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        await axios.delete(
-          `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}`,
-          {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${storedToken}` },
-          }
-        );
+        await client.delete(`/api/admin/users/${id}`);
         setData((prevData) => prevData.filter((user) => user.id !== id));
         toast.success("User deleted successfully!");
       } catch (error) {
-        if (error.response?.status === 401) {
-          storedToken = await refreshToken(navigate);
-          await axios.delete(
-            `${import.meta.env.VITE_API_BASE_URL}/api/admin/users/${id}`,
-            {
-              withCredentials: true,
-              headers: { Authorization: `Bearer ${storedToken}` },
-            }
-          );
-          setData((prevData) => prevData.filter((user) => user.id !== id));
-          toast.success("User deleted successfully!");
-        } else {
-          console.error("Error deleting user:", error);
-          toast.error("Failed to delete user.");
-        }
+        console.error("Error deleting user:", error);
+        toast.error("Failed to delete user.");
       }
     }
   };

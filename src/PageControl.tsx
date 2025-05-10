@@ -23,14 +23,19 @@ function PageControl() {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
         setUser(response.data);
-      } catch (error) {
+      } catch (error: any) {
         if (error.response?.status === 401) {
-          storedToken = await refreshToken();
-          const retryResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${storedToken}` },
-          });
-          setUser(retryResponse.data);
+          try {
+            storedToken = await refreshToken(navigate); // Pass navigate to refreshToken
+            const retryResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${storedToken}` },
+            });
+            setUser(retryResponse.data);
+          } catch (refreshError) {
+            console.error("Error refreshing token:", refreshError);
+            navigate("/");
+          }
         } else {
           console.error("Error fetching user data:", error);
           navigate("/");

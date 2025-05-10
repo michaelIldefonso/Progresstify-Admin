@@ -1,8 +1,36 @@
 import React from "react";
 import Navbar from "./components/navbar";
 import { DataTable } from "./components/users-table";
+import { apiClient } from "./utils/auth"; // Adjusted import to use the correct path
+import { useNavigate } from "react-router-dom";
 
 function Users() {
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const client = apiClient(navigate); // Initialize Axios instance with navigate
+      try {
+        await client.get("/api/admin/users"); // Use relative path
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          try {
+            await client.post("/api/refresh-token"); // Use relative path
+            await client.get("/api/admin/users"); // Use relative path
+          } catch (refreshError) {
+            console.error("Error refreshing token:", refreshError);
+            navigate("/");
+          }
+        } else {
+          console.error("Error fetching user data:", error);
+          navigate("/");
+        }
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
+
   return (
     <div className="flex min-h-screen bg-gray-900 text-white">
       <Navbar />

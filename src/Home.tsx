@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './components/navbar';
-import axios from 'axios';
-import { refreshToken } from "@/utils/auth"; // Import shared utility
+import { apiClient } from "@/utils/auth"; // Use centralized Axios instance
 
 function Home() {
     const [user, setUser] = useState({ name: '', role: '', role_id: null });
@@ -29,26 +28,28 @@ function Home() {
         }
 
         const fetchData = async () => {
+            const client = apiClient(navigate); // Initialize Axios instance with navigate
             try {
-                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
-                    headers: { Authorization: `Bearer ${storedToken}` },
-                });
+                const response = await client.get("/api/data");
                 setUser({
                     name: response.data.userName,
                     role: response.data.userRole === 1 ? "Admin" : "User",
                     role_id: response.data.userRole,
                 });
-            } catch (error) {
+            } catch (error: any) {
                 if (error.response?.status === 401) {
-                    const newToken = await refreshToken();
-                    const retryResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/data`, {
-                        headers: { Authorization: `Bearer ${newToken}` },
-                    });
-                    setUser({
-                        name: retryResponse.data.userName,
-                        role: retryResponse.data.userRole === 1 ? "Admin" : "User",
-                        role_id: retryResponse.data.userRole,
-                    });
+                    try {
+                        await client.post("/api/refresh-token");
+                        const retryResponse = await client.get("/api/data");
+                        setUser({
+                            name: retryResponse.data.userName,
+                            role: retryResponse.data.userRole === 1 ? "Admin" : "User",
+                            role_id: retryResponse.data.userRole,
+                        });
+                    } catch (refreshError) {
+                        console.error("Error refreshing token:", refreshError);
+                        navigate("/");
+                    }
                 } else {
                     console.error("Error fetching user data:", error);
                     navigate("/");

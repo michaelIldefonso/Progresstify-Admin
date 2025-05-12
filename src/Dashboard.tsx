@@ -17,8 +17,11 @@ export default function Page() {
         const response = await client.get("/api/data");
         setUser(response.data);
       } catch (err) {
-        const error = err as any; // Typecast error to any for safe access
-        if (error.response?.status === 401) {
+        const error = err as unknown; // Replace `any` with `unknown`
+        if (
+          error instanceof Error &&
+          (error as { response?: { status: number } }).response?.status === 401 // Narrowing error type
+        ) {
           try {
             const refreshResponse = await client.post("/api/refresh-token");
             if (refreshResponse.status === 200) {

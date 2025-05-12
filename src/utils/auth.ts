@@ -49,9 +49,9 @@ export const apiClient = (navigate: ReturnType<typeof import("react-router-dom")
     });
 
     let isRefreshing = false; // Track if a token refresh is in progress
-    let failedQueue: any[] = []; // Queue to hold failed requests during token refresh
+    let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = []; // Replace `any[]` with a specific type
 
-    const processQueue = (error: any, token: string | null = null) => {
+    const processQueue = (error: unknown, token: string | null = null) => {
         failedQueue.forEach((prom) => {
             if (token) {
                 prom.resolve(token);

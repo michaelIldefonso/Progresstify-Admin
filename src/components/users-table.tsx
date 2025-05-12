@@ -2,7 +2,6 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom"; // Add this import
 import { apiClient } from "@/utils/auth"; // Use centralized Axios instance
 import { z } from "zod";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
@@ -41,12 +40,20 @@ export function DataTable() {
     });
   }, [data, sortByRole]);
 
+  interface RawUser {
+  id?: string;
+  oauth_id?: string;
+  email: string;
+  role_name?: string;
+  oauth_provider?: string;
+}
+
   React.useEffect(() => {
     const fetchData = async () => {
       const client = apiClient(navigate); // Initialize Axios instance with navigate
       try {
         const response = await client.get("/api/admin/users");
-        const usersWithRoles = response.data.map((user: any) => ({
+        const usersWithRoles = response.data.map((user: RawUser) => ({
           id: user.oauth_id || user.id,
           email: user.email,
           role: user.role_name || "unknown",
@@ -59,7 +66,7 @@ export function DataTable() {
           try {
             await client.post("/api/refresh-token");
             const retryResponse = await client.get("/api/admin/users");
-            const usersWithRoles = retryResponse.data.map((user: any) => ({
+            const usersWithRoles = retryResponse.data.map((user: RawUser) => ({
               id: user.oauth_id || user.id,
               email: user.email,
               role: user.role_name || "unknown",

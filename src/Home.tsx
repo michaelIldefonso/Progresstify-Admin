@@ -36,8 +36,11 @@ function Home() {
                     role: response.data.userRole === 1 ? "Admin" : "User",
                     role_id: response.data.userRole,
                 });
-            } catch (error: any) {
-                if (error.response?.status === 401) {
+            } catch (error: unknown) { // Replace `any` with `unknown`
+                if (
+                    error instanceof Error &&
+                    (error as { response?: { status: number } }).response?.status === 401 // Narrowing error type
+                ) {
                     try {
                         await client.post("/api/refresh-token");
                         const retryResponse = await client.get("/api/data");

@@ -25,20 +25,24 @@ export function DataTable() {
   const [sortByRole, setSortByRole] = React.useState<"asc" | "desc" | null>(null); // State for sorting
   const navigate = useNavigate();
 
-  const roleNameToIdMap: Record<string, number> = {
-    admin: 1,
-    moderator: 2,
-    user: 3,
-  };
+  const roleNameToIdMap = React.useMemo(() => {
+    return {
+      admin: 1,
+      moderator: 2,
+      user: 3,
+    } as const;
+  }, []);
+
+  type RoleKey = keyof typeof roleNameToIdMap;
 
   const sortedData = React.useMemo(() => {
     if (!sortByRole) return data;
     return [...data].sort((a, b) => {
-      const roleA = roleNameToIdMap[a.role.toLowerCase()] ?? Infinity;
-      const roleB = roleNameToIdMap[b.role.toLowerCase()] ?? Infinity;
+      const roleA = roleNameToIdMap[(a.role.toLowerCase() as RoleKey)] ?? Infinity;
+      const roleB = roleNameToIdMap[(b.role.toLowerCase() as RoleKey)] ?? Infinity;
       return sortByRole === "asc" ? roleA - roleB : roleB - roleA;
     });
-  }, [data, sortByRole]);
+  }, [data, sortByRole, roleNameToIdMap]);
 
   interface RawUser {
   id?: string;
@@ -48,60 +52,63 @@ export function DataTable() {
   oauth_provider?: string;
 }
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      const client = apiClient(navigate); // Initialize Axios instance with navigate
-      try {
-        const response = await client.get("/api/admin/users");
-        const usersWithRoles = response.data.map((user: RawUser) => ({
-          id: user.oauth_id || user.id,
-          email: user.email,
-          role: user.role_name || "unknown",
-          oauth_id: user.oauth_id,
-          oauth_provider: user.oauth_provider,
-        }));
-        setData(usersWithRoles);
-      } catch (error: any) {
-        if (error.response?.status === 401) {
-          try {
-            await client.post("/api/refresh-token");
-            const retryResponse = await client.get("/api/admin/users");
-            const usersWithRoles = retryResponse.data.map((user: RawUser) => ({
-              id: user.oauth_id || user.id,
-              email: user.email,
-              role: user.role_name || "unknown",
-              oauth_id: user.oauth_id,
-              oauth_provider: user.oauth_provider,
-            }));
-            setData(usersWithRoles);
-          } catch (refreshError) {
-            console.error("Error refreshing token:", refreshError);
-            navigate("/");
-          }
-        } else {
-          console.error("Error fetching users:", error);
+  // Extract fetch logic so it can be reused
+  const fetchUsers = React.useCallback(async () => {
+    setLoading(true);
+    const client = apiClient(navigate);
+    try {
+      const response = await client.get("/api/admin/users");
+      const usersWithRoles = response.data.map((user: RawUser) => ({
+        id: user.oauth_id || user.id,
+        email: user.email,
+        role: user.role_name || "unknown",
+        oauth_id: user.oauth_id,
+        oauth_provider: user.oauth_provider,
+      }));
+      setData(usersWithRoles);
+    } catch (error) {
+      // error is unknown, but may be AxiosError
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        (error as { response?: { status?: number } }).response?.status === 401
+      ) {
+        try {
+          await client.post("/api/refresh-token");
+          const retryResponse = await client.get("/api/admin/users");
+          const usersWithRoles = retryResponse.data.map((user: RawUser) => ({
+            id: user.oauth_id || user.id,
+            email: user.email,
+            role: user.role_name || "unknown",
+            oauth_id: user.oauth_id,
+            oauth_provider: user.oauth_provider,
+          }));
+          setData(usersWithRoles);
+        } catch (refreshError) {
+          console.error("Error refreshing token:", refreshError);
           navigate("/");
         }
-      } finally {
-        setLoading(false);
+      } else {
+        console.error("Error fetching users:", error);
+        navigate("/");
       }
-    };
-
-    fetchData();
+    } finally {
+      setLoading(false);
+    }
   }, [navigate]);
 
-  const updateUserRole = async (id: string, newRole: User["role"]) => {
-    const client = apiClient(navigate); // Initialize Axios instance with navigate
-    const role_id = roleNameToIdMap[newRole.toLowerCase()];
+  React.useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
+  const updateUserRole = async (id: string, newRole: User["role"]) => {
+    const client = apiClient(navigate);
+    const role_id = roleNameToIdMap[newRole.toLowerCase() as RoleKey];
     try {
       await client.put(`/api/admin/users/${id}/role`, { role_id });
-      setData((prevData) =>
-        prevData.map((user) =>
-          user.id === id ? { ...user, role: newRole } : user
-        )
-      );
       toast.success("User role updated!");
+      await fetchUsers(); // Reload users after update
     } catch (error) {
       console.error("Error updating user role:", error);
       toast.error("Failed to update user role.");
@@ -109,13 +116,12 @@ export function DataTable() {
   };
 
   const deleteUser = async (id: string) => {
-    const client = apiClient(navigate); // Initialize Axios instance with navigate
-
+    const client = apiClient(navigate);
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         await client.delete(`/api/admin/users/${id}`);
-        setData((prevData) => prevData.filter((user) => user.id !== id));
         toast.success("User deleted successfully!");
+        await fetchUsers(); // Reload users after delete
       } catch (error) {
         console.error("Error deleting user:", error);
         toast.error("Failed to delete user.");

@@ -4,7 +4,7 @@ import Login from './Login'; // Import Login page
 import Home from './Home';
 import Dashboard from './Dashboard';
 import Users from './userManagement';
-import PageControl from './PageControl';
+import Settings from './settings';
 
 function AppRoutes() {
     return (
@@ -14,7 +14,7 @@ function AppRoutes() {
                 <Route path="/home" element={<Home />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/userManagement" element={<Users />} />
-                <Route path="/pageControl" element={<PageControl />} />
+                <Route path="/settings" element={<Settings />} />
             </Routes>
         </Router>
     );

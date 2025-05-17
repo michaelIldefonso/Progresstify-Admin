@@ -19,7 +19,7 @@ function Navbar() {
                         <li><Link to="/home" className="hover:underline hover:text-white">Home</Link></li>
                         <li><Link to="/dashboard" className="hover:underline hover:text-white">Dashboard</Link></li>
                         <li><Link to="/userManagement" className="hover:underline hover:text-white">User Management</Link></li>
-                        <li><Link to="/pageControl" className="hover:underline hover:text-white">Page Control</Link></li>
+                        <li><Link to="/settings" className="hover:underline hover:text-white">Settings</Link></li>
                         <li><button onClick={handleLogout} className="hover:underline hover:text-white text-left">Logout</button></li>
                     </ul>
                 </div>

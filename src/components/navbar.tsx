@@ -5,7 +5,7 @@ function Navbar() {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
+        localStorage.removeItem("Token"); // Ensure correct casing
         localStorage.removeItem("RefreshToken"); // Clear refresh token
         navigate("/"); // Navigate to login
     };

@@ -4,6 +4,15 @@ import { DataTable } from "./components/users-table";
 import { apiClient } from "./utils/auth"; // Adjusted import to use the correct path
 import { useNavigate } from "react-router-dom";
 
+function isAxiosError(error: unknown): error is { response: { status: number } } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof (error as { response?: { status?: number } }).response?.status === "number"
+  );
+}
+
 function Users() {
   const navigate = useNavigate();
 
@@ -12,11 +21,11 @@ function Users() {
       const client = apiClient(navigate); // Initialize Axios instance with navigate
       try {
         await client.get("/api/admin/users"); // Use relative path
-      } catch (error: any) {
-        if (error.response?.status === 403) {
+      } catch (error: unknown) {
+        if (isAxiosError(error) && error.response.status === 403) {
           alert("Access denied. Admins only.");
           navigate("/home");
-        } else if (error.response?.status === 401) {
+        } else if (isAxiosError(error) && error.response.status === 401) {
           try {
             await client.post("/api/refresh-token"); // Use relative path
             await client.get("/api/admin/users"); // Use relative path

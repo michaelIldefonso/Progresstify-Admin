@@ -87,8 +87,8 @@ export function DataTable() {
         .filter(Boolean) as User[];
 
       setData(usersWithRoles);
-    } catch (error: any) {
-      if (error?.response?.status === 401) {
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response.status === 401) {
         try {
           await client.post("/api/refresh-token");
           await fetchUsers();
@@ -220,5 +220,14 @@ export function DataTable() {
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+function isAxiosError(error: unknown): error is { response: { status: number } } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof (error as { response?: { status?: number } }).response?.status === "number"
   );
 }

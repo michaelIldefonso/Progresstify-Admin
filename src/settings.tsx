@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 function PageControl() {
   const navigate = useNavigate();
   const client = apiClient(navigate); // Initialize API client
-  const [user, setUser] = useState(null);
 
   // Maintenance settings state 
   const [loading, setLoading] = useState(true);
@@ -25,14 +24,12 @@ function PageControl() {
       }
 
       try {
-        const response = await client.get("/api/data");
-        setUser(response.data);
-      } catch (error: any) {
-        if (error.response?.status === 401) {
+        await client.get("/api/data");
+      } catch (error: unknown) {
+        if (error instanceof Error && "response" in error && (error as { response: { status: number } }).response?.status === 401) {
           try {
             storedToken = await refreshToken(navigate); // Pass navigate to refreshToken
-            const retryResponse = await client.get("/api/data");
-            setUser(retryResponse.data);
+            await client.get("/api/data");
           } catch (refreshError) {
             console.error("Error refreshing token:", refreshError);
             navigate("/");

@@ -1,50 +1,37 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom"; // Add this import
-import { apiClient } from "@/utils/auth"; // Use centralized Axios instance
+import { useNavigate } from "react-router-dom";
+import { apiClient } from "@/utils/auth";
 import { z } from "zod";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { toast } from "sonner";
-import { ChevronUpIcon, ChevronDownIcon } from "lucide-react"; // Add this import
-import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
+import { ChevronUpIcon, ChevronDownIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Define schema for user data
 export const userSchema = z.object({
   id: z.string(),
   email: z.string(),
   role: z.enum(["Admin", "User", "Moderator"]),
-  oauth_id: z.string().nullable(), // Add oauth_id
-  oauth_provider: z.string().nullable(), // Add oauth_provider
+  oauth_id: z.string().nullable(),
+  oauth_provider: z.string().nullable(),
 });
 
 type User = z.infer<typeof userSchema>;
 
-export function DataTable() {
-  const [data, setData] = React.useState<User[]>([]);
-  const [loading, setLoading] = React.useState(true); // Add loading state
-  const [sortByRole, setSortByRole] = React.useState<"asc" | "desc" | null>(null); // State for sorting
-  const navigate = useNavigate();
-
-  const roleNameToIdMap = React.useMemo(() => {
-    return {
-      admin: 1,
-      moderator: 2,
-      user: 3,
-    } as const;
-  }, []);
-
-  type RoleKey = keyof typeof roleNameToIdMap;
-
-  const sortedData = React.useMemo(() => {
-    if (!sortByRole) return data;
-    return [...data].sort((a, b) => {
-      const roleA = roleNameToIdMap[(a.role.toLowerCase() as RoleKey)] ?? Infinity;
-      const roleB = roleNameToIdMap[(b.role.toLowerCase() as RoleKey)] ?? Infinity;
-      return sortByRole === "asc" ? roleA - roleB : roleB - roleA;
-    });
-  }, [data, sortByRole, roleNameToIdMap]);
-
-  interface RawUser {
+interface RawUser {
   id?: string;
   oauth_id?: string;
   email: string;
@@ -52,39 +39,59 @@ export function DataTable() {
   oauth_provider?: string;
 }
 
-  // Extract fetch logic so it can be reused
+export function DataTable() {
+  const [data, setData] = React.useState<User[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sortByRole, setSortByRole] = React.useState<"asc" | "desc" | null>(null);
+  const navigate = useNavigate();
+
+  const roleNameToIdMap = React.useMemo(
+    () => ({
+      admin: 1,
+      moderator: 2,
+      user: 3,
+    }),
+    []
+  );
+
+  type RoleKey = keyof typeof roleNameToIdMap;
+
+  const sortedData = React.useMemo(() => {
+    if (!sortByRole) return data;
+    return [...data].sort((a, b) => {
+      const roleA = roleNameToIdMap[a.role.toLowerCase() as RoleKey] ?? Infinity;
+      const roleB = roleNameToIdMap[b.role.toLowerCase() as RoleKey] ?? Infinity;
+      return sortByRole === "asc" ? roleA - roleB : roleB - roleA;
+    });
+  }, [data, sortByRole, roleNameToIdMap]);
+
   const fetchUsers = React.useCallback(async () => {
     setLoading(true);
     const client = apiClient(navigate);
     try {
       const response = await client.get("/api/admin/users");
-      const usersWithRoles = response.data.map((user: RawUser) => ({
-        id: user.oauth_id || user.id,
-        email: user.email,
-        role: user.role_name || "unknown",
-        oauth_id: user.oauth_id,
-        oauth_provider: user.oauth_provider,
-      }));
+      const usersWithRoles: User[] = response.data
+        .map((user: RawUser) => {
+          const id = user.oauth_id || user.id;
+          const roleName = (user.role_name || "user").toLowerCase();
+          if (!id || !(roleName in roleNameToIdMap)) return null;
+
+          return {
+            id,
+            email: user.email,
+            role: roleName.charAt(0).toUpperCase() + roleName.slice(1) as User["role"],
+            oauth_id: user.oauth_id ?? null,
+            oauth_provider: user.oauth_provider ?? null,
+          };
+        })
+        .filter(Boolean) as User[];
+
       setData(usersWithRoles);
-    } catch (error) {
-      // error is unknown, but may be AxiosError
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error &&
-        (error as { response?: { status?: number } }).response?.status === 401
-      ) {
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
         try {
           await client.post("/api/refresh-token");
-          const retryResponse = await client.get("/api/admin/users");
-          const usersWithRoles = retryResponse.data.map((user: RawUser) => ({
-            id: user.oauth_id || user.id,
-            email: user.email,
-            role: user.role_name || "unknown",
-            oauth_id: user.oauth_id,
-            oauth_provider: user.oauth_provider,
-          }));
-          setData(usersWithRoles);
+          await fetchUsers();
         } catch (refreshError) {
           console.error("Error refreshing token:", refreshError);
           navigate("/");
@@ -96,7 +103,7 @@ export function DataTable() {
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, roleNameToIdMap]);
 
   React.useEffect(() => {
     fetchUsers();
@@ -108,7 +115,7 @@ export function DataTable() {
     try {
       await client.put(`/api/admin/users/${id}/role`, { role_id });
       toast.success("User role updated!");
-      await fetchUsers(); // Reload users after update
+      await fetchUsers();
     } catch (error) {
       console.error("Error updating user role:", error);
       toast.error("Failed to update user role.");
@@ -121,7 +128,7 @@ export function DataTable() {
       try {
         await client.delete(`/api/admin/users/${id}`);
         toast.success("User deleted successfully!");
-        await fetchUsers(); // Reload users after delete
+        await fetchUsers();
       } catch (error) {
         console.error("Error deleting user:", error);
         toast.error("Failed to delete user.");
@@ -132,7 +139,7 @@ export function DataTable() {
   if (loading) {
     return (
       <div className="h-[500px] w-full">
-        <Skeleton className="h-full w-full" /> {/* Show Skeleton while loading */}
+        <Skeleton className="h-full w-full bg-gray-700" />
       </div>
     );
   }
@@ -143,7 +150,7 @@ export function DataTable() {
         <TableHeader>
           <TableRow>
             <TableHead className="text-center">ID</TableHead>
-            <TableHead className="text-center">Provider</TableHead> {/* Center Provider column */}
+            <TableHead className="text-center">Provider</TableHead>
             <TableHead className="text-center">Email</TableHead>
             <TableHead
               className="text-center cursor-pointer"
@@ -173,24 +180,24 @@ export function DataTable() {
             sortedData.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>{user.id}</TableCell>
-                <TableCell className="text-center">{user.oauth_provider || "N/A"}</TableCell> {/* Move provider display here */}
+                <TableCell className="text-center">{user.oauth_provider || "N/A"}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell className="text-center">
-                  {user.role}
-                </TableCell>
+                <TableCell className="text-center">{user.role}</TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center gap-2">
                     <Select
                       value={user.role}
-                      onValueChange={(value) => updateUserRole(user.id, value as User["role"])}
+                      onValueChange={(value) =>
+                        updateUserRole(user.id, value as User["role"])
+                      }
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Change role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin" className="text-center">admin</SelectItem>
-                        <SelectItem value="user" className="text-center">user</SelectItem>
-                        <SelectItem value="moderator" className="text-center">moderator</SelectItem>
+                        <SelectItem value="Admin">admin</SelectItem>
+                        <SelectItem value="User">user</SelectItem>
+                        <SelectItem value="Moderator">moderator</SelectItem>
                       </SelectContent>
                     </Select>
                     <button
@@ -205,7 +212,7 @@ export function DataTable() {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="text-center"> {/* Adjust colspan */}
+              <TableCell colSpan={5} className="text-center">
                 No users found.
               </TableCell>
             </TableRow>

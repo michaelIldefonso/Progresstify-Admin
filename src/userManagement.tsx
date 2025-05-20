@@ -13,7 +13,10 @@ function Users() {
       try {
         await client.get("/api/admin/users"); // Use relative path
       } catch (error: any) {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 403) {
+          alert("Access denied. Admins only.");
+          navigate("/home");
+        } else if (error.response?.status === 401) {
           try {
             await client.post("/api/refresh-token"); // Use relative path
             await client.get("/api/admin/users"); // Use relative path

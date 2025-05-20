@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './components/navbar';
 import { apiClient } from "@/utils/auth"; // Use centralized Axios instance
+import { Skeleton } from "@/components/ui/skeleton";
 
 function Home() {
     const [user, setUser] = useState({ name: '', role: '', role_id: null });
@@ -67,12 +68,16 @@ function Home() {
         <div className="flex min-h-screen bg-gray-900 text-white">
             <Navbar />
             <div className="flex-1 p-6">
-                <div className="container mx-auto mt-8 bg-gray-800 p-6 rounded-lg shadow-md">
-                    <h1 className="text-2xl font-bold mb-4">Welcome, {user.name}</h1>
-                    <p className="text-lg">
-                        <span className="font-semibold">Role:</span> {user.role}
-                    </p>
-                </div>
+                {user.name ? (
+                    <div className="container mx-auto mt-8 bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h1 className="text-2xl font-bold mb-4">Welcome, {user.name}</h1>
+                        <p className="text-lg">
+                            <span className="font-semibold">Role:</span> {user.role}
+                        </p>
+                    </div>
+                ) : (
+                    <Skeleton className="h-32 w-full bg-gray-700" />
+                )}
             </div>
         </div>
     );

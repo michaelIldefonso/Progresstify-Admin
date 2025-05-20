@@ -4,6 +4,7 @@ import { apiClient } from "@/utils/auth"; // Replace axios with apiClient
 import Navbar from './components/navbar'; // Ensure correct import
 import { Switch } from "@/components/ui/switch";
 import { refreshToken } from "@/utils/auth"; // Import shared utility
+import { Skeleton } from "@/components/ui/skeleton";
 
 function PageControl() {
   const navigate = useNavigate();
@@ -154,7 +155,7 @@ function PageControl() {
         <div className="container mx-auto mt-8 bg-gray-800 p-6 rounded-lg shadow-md">
           <h1 className="text-xl font-bold mb-4">Settings</h1>
           {loading ? (
-            <div className="text-gray-300">Loading maintenance settings...</div>
+            <Skeleton className="h-32 w-full bg-gray-700" />
           ) : (
             <div className="mb-6">
               <div className="flex items-center gap-3">

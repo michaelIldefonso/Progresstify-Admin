@@ -33,7 +33,7 @@ function Home() {
                 const response = await client.get("/api/data");
                 setUser({
                     name: response.data.userName,
-                    role: response.data.userRole === 1 ? "Admin" : "User",
+                    role: response.data.userRole === 1 ? "Admin" : response.data.userRole === 2 ? "Moderator" : "User",
                     role_id: response.data.userRole,
                 });
             } catch (error: unknown) { // Replace `any` with `unknown`
@@ -46,7 +46,7 @@ function Home() {
                         const retryResponse = await client.get("/api/data");
                         setUser({
                             name: retryResponse.data.userName,
-                            role: retryResponse.data.userRole === 1 ? "Admin" : "User",
+                            role: retryResponse.data.userRole === 1 ? "Admin" : retryResponse.data.userRole === 2 ? "Moderator" : "User",
                             role_id: retryResponse.data.userRole,
                         });
                     } catch (refreshError) {

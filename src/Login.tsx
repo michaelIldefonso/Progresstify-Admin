@@ -1,5 +1,3 @@
-import React from 'react';
-
 // Login page for admin dashboard
 function Login() {
     // Handler for Google OAuth login

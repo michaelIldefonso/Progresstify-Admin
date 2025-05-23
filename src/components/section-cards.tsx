@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+
 export function SectionCards() {
   const [data, setData] = useState({
     totalUsers: 0,
@@ -14,12 +15,14 @@ export function SectionCards() {
     const fetchData = async () => {
       const token = localStorage.getItem("Token")
       if (!token) {
+        // If no token is found, log an error and do not proceed
         console.error("No token found in localStorage")
         return
       }
 
       try {
         const baseUrl = import.meta.env.VITE_API_BASE_URL
+        // Fetch total users, new users, and active accounts in parallel
         const [totalUsersRes, newUsersRes, activeAccountsRes] = await Promise.all([
           axios.get(`${baseUrl}/api/admin/dashboard/charts/total-users`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -35,14 +38,18 @@ export function SectionCards() {
           }),
         ])
 
+        // Extract values from API responses, defaulting to 0 if missing
         const totalUsers = totalUsersRes.data.totalUsers || 0
         const newUsers = newUsersRes.data.newUsers || 0
         const activeAccounts = activeAccountsRes.data.activeAccounts || 0
+        // Calculate growth rate as a percentage of new users to total users
         const growthRate =
           totalUsers > 0 ? `${((newUsers / totalUsers) * 100).toFixed(1)}%` : "0%"
 
+        // Update state with fetched data
         setData({ totalUsers, newUsers, activeAccounts, growthRate })
       } catch (error) {
+        // On error, log and reset all values to zero
         console.error("Error fetching dashboard data:", error)
         setData({
           totalUsers: 0,

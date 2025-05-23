@@ -6,35 +6,44 @@ import { SectionCards } from "@/components/section-cards";
 import Navbar from "@/components/navbar";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Main dashboard page component
 export default function Page() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const navigate = useNavigate(); // React Router navigation hook
+  const [user, setUser] = useState(null); // State to store user data
 
   useEffect(() => {
+    // Fetch user data on component mount
     const fetchData = async () => {
       const client = apiClient(navigate); // Initialize Axios instance with navigate
       try {
+        // Attempt to fetch user data
         const response = await client.get("/api/data");
         setUser(response.data);
       } catch (err) {
+        // Handle errors, including token expiration
         const error = err as unknown; // Replace `any` with `unknown`
         if (
           error instanceof Error &&
           (error as { response?: { status: number } }).response?.status === 401 // Narrowing error type
         ) {
+          // If unauthorized, try to refresh token
           try {
             const refreshResponse = await client.post("/api/refresh-token");
             if (refreshResponse.status === 200) {
+              // Retry fetching user data after refreshing token
               const retryResponse = await client.get("/api/data");
               setUser(retryResponse.data);
             } else {
+              // If refresh fails, redirect to login
               navigate("/");
             }
           } catch (refreshError) {
+            // Handle refresh token errors
             console.error("Error refreshing token:", refreshError);
             navigate("/");
           }
         } else {
+          // Handle other errors
           console.error("Error fetching user data:", error);
           navigate("/");
         }
@@ -44,6 +53,7 @@ export default function Page() {
     fetchData();
   }, [navigate]);
 
+  // Show loading skeletons while user data is being fetched
   if (!user) {
     return (
       <div className="flex min-h-screen bg-gray-900 text-white">
@@ -59,6 +69,7 @@ export default function Page() {
     );
   }
 
+  // Render dashboard content when user data is available
   return (
     <div className="flex min-h-screen bg-gray-900 text-white">
       <Navbar />

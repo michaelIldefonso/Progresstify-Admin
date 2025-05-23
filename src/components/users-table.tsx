@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { ChevronUpIcon, ChevronDownIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
+
 export const userSchema = z.object({
   id: z.string(),
   email: z.string(),
@@ -45,6 +46,7 @@ export function DataTable() {
   const [sortByRole, setSortByRole] = React.useState<"asc" | "desc" | null>(null);
   const navigate = useNavigate();
 
+  // Map role names to IDs for API usage
   const roleNameToIdMap = React.useMemo(
     () => ({
       admin: 1,
@@ -56,6 +58,7 @@ export function DataTable() {
 
   type RoleKey = keyof typeof roleNameToIdMap;
 
+  // Sort users by role if sorting is enabled
   const sortedData = React.useMemo(() => {
     if (!sortByRole) return data;
     return [...data].sort((a, b) => {
@@ -65,6 +68,7 @@ export function DataTable() {
     });
   }, [data, sortByRole, roleNameToIdMap]);
 
+  // Fetch users from API and normalize data
   const fetchUsers = React.useCallback(async () => {
     setLoading(true);
     const client = apiClient(navigate);
@@ -88,6 +92,7 @@ export function DataTable() {
 
       setData(usersWithRoles);
     } catch (error: unknown) {
+      // If unauthorized, try to refresh token and retry
       if (isAxiosError(error) && error.response.status === 401) {
         try {
           await client.post("/api/refresh-token");
@@ -97,6 +102,7 @@ export function DataTable() {
           navigate("/");
         }
       } else {
+        // On other errors, log and redirect
         console.error("Error fetching users:", error);
         navigate("/");
       }
@@ -109,6 +115,7 @@ export function DataTable() {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Update a user's role via API
   const updateUserRole = async (id: string, newRole: User["role"]) => {
     const client = apiClient(navigate);
     const role_id = roleNameToIdMap[newRole.toLowerCase() as RoleKey];
@@ -122,6 +129,7 @@ export function DataTable() {
     }
   };
 
+  // Delete a user via API after confirmation
   const deleteUser = async (id: string) => {
     const client = apiClient(navigate);
     if (window.confirm("Are you sure you want to delete this user?")) {

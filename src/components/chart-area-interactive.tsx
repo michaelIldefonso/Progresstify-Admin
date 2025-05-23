@@ -70,13 +70,16 @@ export function ChartAreaInteractive() {
           return
         }
         const baseUrl = import.meta.env.VITE_API_BASE_URL
-        // Calculate startDate and endDate
+        // Calculate startDate and endDate for the selected time range
         const endDate = new Date()
+        // Use 7 days if "7d" is selected, otherwise 30 days
         const days = timeRange === "7d" ? 7 : 30
         const startDate = new Date()
+        // Subtract the number of days from the end date to get the start date
         startDate.setDate(endDate.getDate() - days)
-        // Format as yyyy-mm-dd
+        // Format dates as yyyy-mm-dd for the API
         const format = (d: Date) => d.toISOString().slice(0, 10)
+        // Fetch daily metrics for active accounts from the API
         const res = await axios.get(`${baseUrl}/api/admin/dashboard/charts/daily-metrics`, {
           params: {
             metricType: "active_accounts",
@@ -86,6 +89,7 @@ export function ChartAreaInteractive() {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         })
+        // Update chart data with the response
         setChartData(res.data.metrics || [])
       } catch (err: any) {
         setError("Failed to fetch chart data")

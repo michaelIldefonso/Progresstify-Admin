@@ -1,6 +1,8 @@
 import React from 'react';
 
+// Login page for admin dashboard
 function Login() {
+    // Handler for Google OAuth login
     const handleOAuthLogin = () => {
         // Redirect to the OAuth login URL
         const oauth2LoginUrl = `${import.meta.env.VITE_API_BASE_URL}/auth/admin/google`;

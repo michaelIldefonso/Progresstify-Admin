@@ -1,11 +1,12 @@
 import axios from "axios";
 
+// Function to refresh the access token using the stored refresh token
 export const refreshToken = async (navigate: ReturnType<typeof import("react-router-dom").useNavigate>) => {
+    // Retrieve the refresh token from localStorage
     const storedRefreshToken = localStorage.getItem("RefreshToken");
-    console.log("Stored Refresh Token:", storedRefreshToken); // Log the refresh token for debugging
 
+    // If no refresh token is found, clear tokens and redirect to login
     if (!storedRefreshToken) {
-        console.error("No refresh token found, redirecting...");
         localStorage.removeItem("Token");
         localStorage.removeItem("RefreshToken");
         navigate("/"); // Redirect to login
@@ -13,17 +14,19 @@ export const refreshToken = async (navigate: ReturnType<typeof import("react-rou
     }
 
     try {
+        // Attempt to get a new access token from the backend using the refresh token
         const response = await axios.post(
             `${import.meta.env.VITE_API_BASE_URL}/token/refresh-token`,
-            { refreshToken: storedRefreshToken }, // Corrected key to match backend expectation
+            { refreshToken: storedRefreshToken }, // Send the refresh token in the request body
             { withCredentials: true }
         );
+        // Extract the new access token from the response
         const newToken = response.data.accessToken; // Updated to match backend response key
-        console.log("New Access Token:", newToken); // Log the new token for debugging
+        // Store the new access token in localStorage
         localStorage.setItem("Token", newToken); // Store the new token
-        console.log("Token stored in localStorage:", localStorage.getItem("Token")); // Verify token storage
         return newToken;
     } catch (error) {
+        // If refreshing fails, clear tokens and redirect to login
         console.error("Error refreshing token:", error);
         localStorage.removeItem("Token");
         localStorage.removeItem("RefreshToken");
@@ -44,7 +47,6 @@ export const apiClient = (navigate: ReturnType<typeof import("react-router-dom")
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        console.log("Request Headers:", config.headers); // Log headers for debugging
         return config;
     });
 

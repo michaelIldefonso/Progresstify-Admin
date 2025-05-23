@@ -15,6 +15,7 @@ function PageControl() {
   const [maintenanceId] = useState("1"); // Replace with dynamic ID if needed
 
   useEffect(() => {
+    // Check for token and fetch user data for authentication
     const fetchData = async () => {
       let storedToken = localStorage.getItem("Token");
 
@@ -26,6 +27,7 @@ function PageControl() {
       try {
         await client.get("/api/data");
       } catch (error: unknown) {
+        // Handle 401 (unauthorized) error and try to refresh token
         if (error instanceof Error && "response" in error && (error as { response: { status: number } }).response?.status === 401) {
           try {
             storedToken = await refreshToken(navigate); // Pass navigate to refreshToken
@@ -35,6 +37,7 @@ function PageControl() {
             navigate("/");
           }
         } else {
+          // Handle all other errors
           console.error("Error fetching user data:", error);
           navigate("/");
         }
@@ -49,9 +52,7 @@ function PageControl() {
       try {
         const response = await client.get(`/api/admin/maintenance/${maintenanceId}`);
         const data = response.data;
-        console.log("Fetched maintenance data:", data); // Debugging log
         setMaintenanceMode(data.is_enabled || false);
-        console.log("Updated maintenanceMode state:", data.is_enabled || false); // Debugging log
         setMaintenanceEnd(new Date(data.estimated_end).toISOString().slice(0, 16)); // Format for datetime-local input
         setMaintenanceMessage(data.message || "We are currently performing maintenance. Please check back soon.");
       } catch (error) {
@@ -72,6 +73,7 @@ function PageControl() {
   // New state for maintenance message
   const [maintenanceMessage, setMaintenanceMessage] = useState("We are currently performing maintenance. Please check back soon.");
 
+  // Toggle maintenance mode handler
   const handleToggle = async () => {
     const newMode = !maintenanceMode;
     setMaintenanceMode(newMode);
@@ -100,6 +102,7 @@ function PageControl() {
     }
   };
 
+  // Handler for changing maintenance end time
   const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
@@ -110,6 +113,7 @@ function PageControl() {
     }
   };
 
+  // Clear maintenance end time
   const clearEndTime = () => {
     setMaintenanceEnd("");
   };
@@ -125,12 +129,12 @@ function PageControl() {
     }
   }, [maintenanceEnd]);
 
-  // New handler for maintenance message
+  // Handler for maintenance message input
   const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMaintenanceMessage(e.target.value);
   };
 
-  // Save handler (stub, implement API call as needed)
+  // Save handler for maintenance settings
   const handleSave = async () => {
     try {
       await client.put(`/api/admin/maintenance/${maintenanceId}`, {

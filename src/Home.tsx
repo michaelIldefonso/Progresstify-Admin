@@ -5,6 +5,7 @@ import { apiClient } from "@/utils/auth"; // Use centralized Axios instance
 import { Skeleton } from "@/components/ui/skeleton";
 
 function Home() {
+    // User state: name, role, and role_id
     const [user, setUser] = useState({ name: '', role: '', role_id: null });
     const navigate = useNavigate();
 
@@ -28,6 +29,7 @@ function Home() {
             return;
         }
 
+        // Fetch user data and handle authentication
         const fetchData = async () => {
             const client = apiClient(navigate); // Initialize Axios instance with navigate
             try {
@@ -38,6 +40,7 @@ function Home() {
                     role_id: response.data.userRole,
                 });
             } catch (error: unknown) { // Replace `any` with `unknown`
+                // Handle 401 (unauthorized) error and try to refresh token
                 if (
                     error instanceof Error &&
                     (error as { response?: { status: number } }).response?.status === 401 // Narrowing error type
@@ -55,6 +58,7 @@ function Home() {
                         navigate("/");
                     }
                 } else {
+                    // Handle all other errors
                     console.error("Error fetching user data:", error);
                     navigate("/");
                 }
@@ -76,6 +80,7 @@ function Home() {
                         </p>
                     </div>
                 ) : (
+                    // Show skeleton loader while loading user data
                     <Skeleton className="h-32 w-full bg-gray-700" />
                 )}
             </div>
